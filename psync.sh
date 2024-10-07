@@ -44,6 +44,11 @@ uuid="0000-000A"
 # (workaround for slow mounting of some devices while using Rockbox file transfer)
 sleep_time=120
 
+# Append podcast name to end of the episode file name? (yes or no)
+# Podgrab does not add the podcast name to the episode file name, which can cause some
+# confusion when viewing the queue
+append_podcast_name="yes"
+
 ### REMOTE SYNC CONFIGURATION ###
 
 # Remote Sync? (yes or no)
@@ -84,12 +89,14 @@ else
 fi
 
 # Rename each file to include the parent folder name
-find "$mount_point/$device_sync_path/.tmp" -type f -name '*.mp3' -print0 | while IFS= read -r -d $'\0' file; do
-   dir=$(dirname "$file")
-   base=$(basename "$file")
-   parent=$(basename "$dir")
-   mv "$file" "$dir/${base%.*} - $parent.mp3"
-done
+if [ "$append_podcast_name" = "yes" ]; then
+   find "$mount_point/$device_sync_path/.tmp" -type f -name '*.mp3' -print0 | while IFS= read -r -d $'\0' file; do
+      dir=$(dirname "$file")
+      base=$(basename "$file")
+      parent=$(basename "$dir")
+      mv "$file" "$dir/${base%.*} - $parent.mp3"
+   done
+fi
 
 # Create a sorted list of files based on modified date, only for podcasts in the auto_queue_shows array
 for podcast in "${auto_queue_shows[@]}"; do
