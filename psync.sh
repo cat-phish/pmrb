@@ -72,7 +72,7 @@ mount_point=$(udisksctl mount -b /dev/disk/by-uuid/$uuid | cut -d" " -f 4 | tr -
 sleep $sleep_time
 
 # Create a temporary directory for syncing
-mkdir -p "$mount_point/.tmp"
+mkdir -p "$mount_point/$device_sync_path/.tmp"
 
 if [ "$remote_sync" = "yes" ]; then
    # Sync the podcasts from the remote source to the temporary directory
