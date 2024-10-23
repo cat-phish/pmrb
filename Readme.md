@@ -1,8 +1,15 @@
-# psync - Podcast Sync Utility
+# pmrb - Podcast Manager for Rockbox
 
-`psync` is a utility to sync podcasts to a playback device with the goal of emulating the functionality of a modern podcast app. It automatically queues new episodes in the order that they were downloaded. 
+`pmrb` is a utility to sync podcasts to a Rockback playback device with the goal of emulating the functionality of a modern podcast app.
 
 **WARNING** - This script deletes source files when syncing. It is recommended to run a separate Docker container or instance for your podcast downloading utility if you are already using one for other purposes.
+
+## Features
+- Automatic queuing of new episodes in the order that they were downloaded.
+- Decide which podcasts to auto-queue and which don't.
+- Auto cleanup of old episodes based on a specified age and file modified time.
+- Auto cleanup of the Queue based on the most recent bookmark.
+- Auto mount and unmount of the device.
 
 ## Dependencies
 
@@ -12,13 +19,16 @@
 
 ## Also Required
 
-A podcast downloading utility like Podgrab or Gpodder
+A podcast downloading utility like Gpodder (recommended) or Podgrab
 
 ## Usage
 
 1. Set the configuration options and optionally remote configuration options to match your setup.
 2. If using remote sync setup ssh passwordless login ([guide](https://www.tecmint.com/ssh-passwordless-login-using-ssh-keygen-in-5-easy-steps/)).
-3. Manually run script or use cron jobs or systemd timers to automate.
+3. Recommended Rockbox settings
+   a. Settings > General Settings > Bookmarks > Bookmark on Stop > Ask (or Yes, but Yes will create bookmarks for non-podcasts)
+   b. Settings > General Settings > Bookmarks > Update on Stop > Yes
+5. Manually run script or use cron jobs or systemd timers to automate.
 
 ## Configuration
 
