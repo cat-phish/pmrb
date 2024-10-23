@@ -1,23 +1,35 @@
 #!/bin/bash
 ################################################################################
-# Script Name: psync - podcast sync utility
+# Script Name: pmrb.sh (Podcast Manager for Rockbox)
 # Description: A utility to sync podcasts to a playback device with the goal of
-#              emulating the functionality of a modern podcast app. With
-#              automatic queuing of new episodes in the order that they were
-#              downloaded.
+#              emulating the functionality of a modern podcast app.
+#              Features:
+#                 * Automatic queuing of new episodes in the order that they
+#                   were downloaded.
+#                 * Decide which podcasts to auto-queue and which don't.
+#                 * Auto cleanup of old episodes based on a specified age and
+#                   file modified time.
+#                 * Auto cleanup of the Queue based on the most recent
+#                   bookmark.
+#                 * Auto mount and unmount of the device.
 #              WARNING - This script deletes source files when syncing. It is
 #              recommended to run a separate docker container or instance for
 #              your podcast downloading utility if you are already using one for
 #              other purposes.
 # Author: cat-phish
-# Date: 2024-09-21
+# Date: 2024-10-23
 # Usage: Dependencies - udisks2, rsync, ssh (if remote sync is enabled)
-#        Also Required - A podcast downloading utility like Podgrab or Gpodder
+#        Also Required - A podcast downloading utility like Gpodder
+#                        (recommended) or Podgrab, and a Rockbox device.
 #        1) Set the configuration options and optionally remote configuration
 #           options to match your setup
 #        2) If using remote sync setup ssh passwordless login
 #           (https://www.tecmint.com/ssh-passwordless-login-using-ssh-keygen-in-5-easy-steps/)
-#        3) Manually run script or use cron jobs or systemd timers to automate
+#        3) Recommended Rockbox settings
+#           a) Settings > General Settings > Bookmarks > Bookmark on Stop > Ask
+#              (or Yes, but Yes will create bookmarks for non-podcasts)
+#           b) Settings > General Settings > Bookmarks > Update on Stop > Yes
+#        4) Manually run script or use cron jobs or systemd timers to automate
 ################################################################################
 
 ### CONFIGURATION ###
@@ -27,12 +39,20 @@
 source_podcast_path="/path/to/your/source/podcasts"
 
 # Set the device path you would like to sync your podcasts to (e.g. /Podcasts/Shows)
+# It is recommended to use a separate folder for permenantly stored podcasts (e.g. /Podcasts/Archive)
+# especially when using auto-cleanup
 # (No trailing slash!)
 device_sync_path="/Podcasts/Shows"
 
 # Set the location you would like to sync your Queue.m3u8 to)
 # (No trailing slash!)
 device_queue_location="/Podcasts"
+
+# Set the max age for auto-cleanup in days, 0 to disable (based on file modified time)
+max_age=180
+
+# Auto clean the Queue.m3u8 file based on the most recent bookmark from Queue.m3u8.bmark
+auto_clean_queue="yes"
 
 # Define the array of podcasts to auto queue (this should match case-sensitive to the folder names of each podcast)
 auto_queue_shows=("Example Podcast 1" "Example Podcast 2" "Example Podcast 3")
@@ -116,6 +136,41 @@ rsync -av --remove-source-files "$mount_point/$device_sync_path/.tmp/" "$mount_p
 rm sorted_files.txt
 if [ "$mount_point/$device_sync_path/.tmp" == "$mount_point/$device_sync_path/.tmp" ]; then
    rm -rf "$mount_point/$device_sync_path/.tmp"
+fi
+
+# Auto-cleanup old files based on max_age
+if [ "$max_age" -gt 0 ]; then
+   find "$mount_point/$device_sync_path" -type f -name '*.mp3' -mtime +$max_age -exec rm -f {} \;
+fi
+
+# Check if auto_clean_queue is set to yes
+if [ "$auto_clean_queue" == "yes" ]; then
+    # Update Queue.m3u8 based on the most recent bookmark from Queue.m3u8.bmark
+    bmark_file="$mount_point/$device_queue_location/Queue.m3u8.bmark"
+    queue_file="$mount_point/$device_queue_location/Queue.m3u8"
+
+    if [ -f "$bmark_file" ]; then
+        first_line=$(head -n 1 "$bmark_file")
+        IFS=';' read -ra parts <<< "$first_line"
+        podcast_path="${parts[-1]}"
+        mapfile -t queue_lines < "$queue_file"
+        matched_index=-1
+        for i in "${!queue_lines[@]}"; do
+            if [[ "${queue_lines[$i]}" =~ .*"$podcast_path".* ]]; then
+                matched_index=$i
+                break
+            fi
+        done
+        if [ $matched_index -ne -1 ]; then
+            new_queue_lines=("${queue_lines[@]:$matched_index}")
+            printf "%s\n" "${new_queue_lines[@]}" > "$queue_file"
+            echo "Updated $queue_file successfully."
+        else
+            echo "No matching line found in $queue_file. Exiting."
+        fi
+    else
+        echo "$bmark_file does not exist. Exiting."
+    fi
 fi
 
 # Unmount the drive
