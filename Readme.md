@@ -36,4 +36,4 @@ Refer to the script for the configuration options. You need to set the paths for
 
 ## Script
 
-The script mounts the drive, creates a temporary directory for syncing, syncs the podcasts from the source to the temporary directory, deletes the source mp3 files after syncing, renames each file to include the parent folder name, creates a sorted list of files based on modified date, appends the newly synced episodes to the m3u8 playlist, moves the synced files to the device path, and unmounts the drive.
+The script mounts the drive, creates a temporary directory for syncing, syncs the podcasts from the source to the temporary directory, deletes the source mp3 files after syncing, renames each file to include the parent folder name, creates a sorted list of files based on modified date, appends the newly synced episodes to the m3u8 playlist, moves the synced files to the device path. It then optionally checks for files in your podcast path with file modification dates older than the max age for deletion, and also optionally cleans your queue based on the last bookmark created for the queue by Rockbox. It then unmounts the drive.
