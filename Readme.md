@@ -26,9 +26,14 @@ A podcast downloading utility like Gpodder (recommended) or Podgrab
 1. Set the configuration options and optionally remote configuration options to match your setup.
 2. If using remote sync setup ssh passwordless login ([guide](https://www.tecmint.com/ssh-passwordless-login-using-ssh-keygen-in-5-easy-steps/)).
 3. Recommended Rockbox settings
-    * Settings > General Settings > Bookmarks > Bookmark on Stop > Ask (or Yes, but Yes will create bookmarks for non-podcasts)
-    * Settings > General Settings > Bookmarks > Update on Stop > Yes
-5. Manually run script or use cron jobs or systemd timers to automate.
+    * `Settings > General Settings > Bookmarks > Bookmark on Stop > Ask` (or Yes, but Yes will create bookmarks for non-podcasts)
+    * `Settings > General Settings > Bookmarks > Update on Stop > Yes`
+4. Recommended Gpodder settings
+    * Go to `Preferences > Extensions > Edit Config`
+    * Ensure `extensions.rename_download.add_podcast_title` is checked.
+    * Ensure `extensions.rename_download.add_sort_date` is checked.
+    * This will add readability to your queue.
+6. Manually run script or use cron jobs or systemd timers to automate.
 
 ## Configuration
 
