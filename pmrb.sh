@@ -29,6 +29,11 @@
 #           a) Settings > General Settings > Bookmarks > Bookmark on Stop > Ask
 #              (or Yes, but Yes will create bookmarks for non-podcasts)
 #           b) Settings > General Settings > Bookmarks > Update on Stop > Yes
+#        4. Recommended Gpodder settings
+#           a) Go to `Preferences > Extensions > Edit Config`
+#           b) Ensure `extensions.rename_download.add_podcast_title` is checked.
+#           c) Ensure `extensions.rename_download.add_sort_date` is checked.
+#           d) This will add readability to your queue.
 #        4) Manually run script or use cron jobs or systemd timers to automate
 ################################################################################
 
@@ -145,40 +150,43 @@ fi
 
 # Check if auto_clean_queue is set to yes
 if [ "$auto_clean_queue" == "yes" ]; then
-    # Update Queue.m3u8 based on the most recent bookmark from Queue.m3u8.bmark
-    bmark_file="$mount_point/$device_queue_location/Queue.m3u8.bmark"
-    queue_file="$mount_point/$device_queue_location/Queue.m3u8"
+   # Update Queue.m3u8 based on the most recent bookmark from Queue.m3u8.bmark
+   bmark_file="$mount_point/$device_queue_location/Queue.m3u8.bmark"
+   queue_file="$mount_point/$device_queue_location/Queue.m3u8"
 
-    if [ -f "$bmark_file" ]; then
-        # Read the first line and modify the second field to 0
-        first_line=$(head -n 1 "$bmark_file")
-        IFS=';' read -ra parts <<< "$first_line"
-        parts[1]=0
-        modified_first_line=$(IFS=';'; echo "${parts[*]}")
+   if [ -f "$bmark_file" ]; then
+      # Read the first line and modify the second field to 0
+      first_line=$(head -n 1 "$bmark_file")
+      IFS=';' read -ra parts <<<"$first_line"
+      parts[1]=0
+      modified_first_line=$(
+         IFS=';'
+         echo "${parts[*]}"
+      )
 
-        # Write the modified first line back to the file and delete all other lines
-        echo "$modified_first_line" > "$bmark_file"
+      # Write the modified first line back to the file and delete all other lines
+      echo "$modified_first_line" >"$bmark_file"
 
-        # Extract the podcast path from the modified first line
-        podcast_path="${parts[-1]}"
-        mapfile -t queue_lines < "$queue_file"
-        matched_index=-1
-        for i in "${!queue_lines[@]}"; do
-            if [[ "${queue_lines[$i]}" =~ .*"$podcast_path".* ]]; then
-                matched_index=$i
-                break
-            fi
-        done
-        if [ $matched_index -ne -1 ]; then
-            new_queue_lines=("${queue_lines[@]:$matched_index}")
-            printf "%s\n" "${new_queue_lines[@]}" > "$queue_file"
-            echo "Updated $queue_file successfully."
-        else
-            echo "No matching line found in $queue_file. Exiting."
-        fi
-    else
-        echo "$bmark_file does not exist. Exiting."
-    fi
+      # Extract the podcast path from the modified first line
+      podcast_path="${parts[-1]}"
+      mapfile -t queue_lines <"$queue_file"
+      matched_index=-1
+      for i in "${!queue_lines[@]}"; do
+         if [[ "${queue_lines[$i]}" =~ .*"$podcast_path".* ]]; then
+            matched_index=$i
+            break
+         fi
+      done
+      if [ $matched_index -ne -1 ]; then
+         new_queue_lines=("${queue_lines[@]:$matched_index}")
+         printf "%s\n" "${new_queue_lines[@]}" >"$queue_file"
+         echo "Updated $queue_file successfully."
+      else
+         echo "No matching line found in $queue_file. Exiting."
+      fi
+   else
+      echo "$bmark_file does not exist. Exiting."
+   fi
 fi
 
 # Unmount the drive
