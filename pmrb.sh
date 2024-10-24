@@ -150,8 +150,16 @@ if [ "$auto_clean_queue" == "yes" ]; then
     queue_file="$mount_point/$device_queue_location/Queue.m3u8"
 
     if [ -f "$bmark_file" ]; then
+        # Read the first line and modify the second field to 0
         first_line=$(head -n 1 "$bmark_file")
         IFS=';' read -ra parts <<< "$first_line"
+        parts[1]=0
+        modified_first_line=$(IFS=';'; echo "${parts[*]}")
+
+        # Write the modified first line back to the file and delete all other lines
+        echo "$modified_first_line" > "$bmark_file"
+
+        # Extract the podcast path from the modified first line
         podcast_path="${parts[-1]}"
         mapfile -t queue_lines < "$queue_file"
         matched_index=-1
